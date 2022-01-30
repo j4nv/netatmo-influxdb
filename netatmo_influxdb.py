@@ -3,13 +3,18 @@
 
 import os
 import lnetatmo
-from influxdb import InfluxDBClient
+from influxdb_client import InfluxDBClient, Point
+from influxdb_client.client.exceptions import InfluxDBError
+from influxdb_client.client.write_api import SYNCHRONOUS
 
 CLIENT_ID = os.environ['CLIENT_ID']
 CLIENT_SECRET = os.environ['CLIENT_SECRET']
 USERNAME = os.environ['USERNAME']
 PASSWORD = os.environ['PASSWORD']
 INFLUXDBHOST = os.environ['INFLUXDBHOST']
+TOKEN = os.environ['TOKEN']
+ORG = os.environ['ORG']
+BUCKET = os.environ['BUCKET']
 
 authorization = lnetatmo.ClientAuth(
         clientId=CLIENT_ID,
@@ -21,15 +26,12 @@ authorization = lnetatmo.ClientAuth(
 
 weatherData = lnetatmo.WeatherStationData(authorization)
 
-client = InfluxDBClient(host=INFLUXDBHOST, port=8086)
-if {'name': 'netatmo'} not in client.get_list_database():
-    client.create_database('netatmo')
+client = InfluxDBClient(url=INFLUXDBHOST, token=TOKEN, org=ORG
+write_api = client.write_api(write_options=SYNCHRONOUS)
 
 for station in weatherData.stations:
-    #print("\nSTATION : %s\n" % weatherData.stations[station]["station_name"])
     station_data = []
     module_data = []
-    #station = weatherData.stationById(station)
     station_name = weatherData.stations[station]['station_name']
     altitude = weatherData.stations[station]['place']['altitude']
     country= weatherData.stations[station]['place']['country']
@@ -69,5 +71,6 @@ for station in weatherData.stations:
                     }
                 })
 
-    client.write_points(station_data, time_precision='s', database='netatmo')
-    client.write_points(module_data, time_precision='s', database='netatmo')
+
+    write_api.write(BUCKET, ORG, station_data, write_precision='s')
+    write_api.write(BUCKET, ORG, module_data, write_precision='s')
