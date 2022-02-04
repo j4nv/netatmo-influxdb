@@ -26,7 +26,7 @@ authorization = lnetatmo.ClientAuth(
 
 weatherData = lnetatmo.WeatherStationData(authorization)
 
-client = InfluxDBClient(url=INFLUXDBHOST, token=TOKEN, org=ORG
+client = InfluxDBClient(url=INFLUXDBHOST, token=TOKEN, org=ORG)
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 for station in weatherData.stations:
